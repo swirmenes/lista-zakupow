@@ -133,6 +133,18 @@
         android:orientation="horizontal"
         android:padding="10dp">
 
+        <ImageButton
+            android:id="@+id/camera"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="8dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/camera"
+            android:padding="12dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_camera"
+            android:tint="@color/fg" />
+
         <EditText
             android:id="@+id/input"
             android:layout_width="0dp"

@@ -34,6 +34,15 @@ public final class ListStore {
         return c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_LOCK, true);
     }
 
+    /** Klucz Claude API, zapisany tylko w pamięci tego telefonu. */
+    public static String apiKey(Context c) {
+        return c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString("api_key", "");
+    }
+
+    public static void setApiKey(Context c, String key) {
+        c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString("api_key", key).apply();
+    }
+
     public static void setShowOnLock(Context c, boolean on) {
         c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_LOCK, on).apply();
     }

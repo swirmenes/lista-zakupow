@@ -2,10 +2,22 @@ package pl.listazakupow;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Paint;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.MediaStore;
+import android.widget.ProgressBar;
+import android.widget.Toast;
+
+import androidx.core.content.FileProvider;
+
+import java.io.File;
+import java.util.Arrays;
+import java.util.List;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -56,6 +68,17 @@ public class MainActivity extends Activity {
             ListStore.setShowOnLock(this, lockSwitch.isChecked());
             ListNotification.update(this);
         });
+
+        View camera = findViewById(R.id.camera);
+        camera.setOnClickListener(v -> onCameraClick());
+        camera.setOnLongClickListener(v -> {
+            askForKey(null);
+            return true;
+        });
+        if (savedInstanceState != null) {
+            String p = savedInstanceState.getString("photo");
+            if (p != null) photoFile = new File(p);
+        }
 
         add.setOnClickListener(v -> addFromInput());
         input.setOnEditorActionListener((v, actionId, event) -> {
@@ -112,6 +135,178 @@ public class MainActivity extends Activity {
             // Puste pole + "Dodaj"/Enter = koniec wpisywania, chowamy klawiaturę.
             hideKeyboard();
         }
+    }
+
+    // ---------- Zdjęcie listy ----------
+
+    private static final int REQ_CAMERA = 10;
+    private static final int REQ_GALLERY = 11;
+    private File photoFile;
+
+    @Override
+    protected void onSaveInstanceState(Bundle out) {
+        super.onSaveInstanceState(out);
+        if (photoFile != null) out.putString("photo", photoFile.getAbsolutePath());
+    }
+
+    private void onCameraClick() {
+        hideKeyboard();
+        if (ListStore.apiKey(this).isEmpty()) {
+            askForKey(this::onCameraClick);
+            return;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.photo_title)
+                .setItems(new CharSequence[]{getString(R.string.photo_take), getString(R.string.photo_pick)},
+                        (d, which) -> {
+                            if (which == 0) takePhoto();
+                            else pickPhoto();
+                        })
+                .show();
+    }
+
+    private void takePhoto() {
+        try {
+            File dir = new File(getCacheDir(), "photos");
+            dir.mkdirs();
+            photoFile = new File(dir, "lista.jpg");
+            Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".files", photoFile);
+            Intent i = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            i.putExtra(MediaStore.EXTRA_OUTPUT, uri);
+            i.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivityForResult(i, REQ_CAMERA);
+        } catch (Exception e) {
+            Toast.makeText(this, R.string.no_camera, Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void pickPhoto() {
+        try {
+            Intent i = new Intent(Intent.ACTION_GET_CONTENT);
+            i.setType("image/*");
+            startActivityForResult(i, REQ_GALLERY);
+        } catch (Exception e) {
+            Toast.makeText(this, R.string.no_gallery, Toast.LENGTH_LONG).show();
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode != RESULT_OK) return;
+        Uri uri = null;
+        if (requestCode == REQ_CAMERA && photoFile != null) uri = Uri.fromFile(photoFile);
+        else if (requestCode == REQ_GALLERY && data != null) uri = data.getData();
+        if (uri != null) readPhoto(uri);
+    }
+
+    private void readPhoto(Uri uri) {
+        final boolean[] cancelled = {false};
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.HORIZONTAL);
+        box.setGravity(Gravity.CENTER_VERTICAL);
+        box.setPadding(dp(24), dp(24), dp(24), dp(16));
+        box.addView(new ProgressBar(this));
+        TextView t = new TextView(this);
+        t.setText(R.string.reading);
+        t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 17);
+        t.setTextColor(getColor(R.color.fg));
+        t.setPadding(dp(16), 0, 0, 0);
+        box.addView(t);
+        AlertDialog progress = new AlertDialog.Builder(this)
+                .setView(box)
+                .setCancelable(false)
+                .setNegativeButton(R.string.cancel, (d, w) -> cancelled[0] = true)
+                .show();
+
+        String key = ListStore.apiKey(this);
+        new Thread(() -> {
+            List<String> found = null;
+            PhotoReader.ReadException error = null;
+            try {
+                found = PhotoReader.read(getApplicationContext(), uri, key);
+            } catch (PhotoReader.ReadException e) {
+                error = e;
+            }
+            final List<String> f = found;
+            final PhotoReader.ReadException err = error;
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed() || cancelled[0]) return;
+                progress.dismiss();
+                if (err != null) showReadError(err);
+                else if (f == null || f.isEmpty()) showMessage(R.string.nothing_found);
+                else showFound(f);
+            });
+        }).start();
+    }
+
+    private void showFound(List<String> found) {
+        CharSequence[] names = found.toArray(new CharSequence[0]);
+        boolean[] checked = new boolean[names.length];
+        Arrays.fill(checked, true);
+        new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.found_title, names.length))
+                .setMultiChoiceItems(names, checked, (d, which, isChecked) -> checked[which] = isChecked)
+                .setPositiveButton(R.string.add_checked, (d, w) -> {
+                    for (int i = 0; i < names.length; i++) {
+                        if (checked[i]) items.add(new ListStore.Item(names[i].toString()));
+                    }
+                    changed();
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
+    private void showReadError(PhotoReader.ReadException e) {
+        int msg;
+        switch (e.kind) {
+            case PhotoReader.ReadException.BAD_KEY: msg = R.string.err_key; break;
+            case PhotoReader.ReadException.NO_CREDIT: msg = R.string.err_credit; break;
+            case PhotoReader.ReadException.BUSY: msg = R.string.err_busy; break;
+            case PhotoReader.ReadException.NETWORK: msg = R.string.err_network; break;
+            case PhotoReader.ReadException.IMAGE: msg = R.string.err_image; break;
+            default: msg = R.string.err_other;
+        }
+        AlertDialog.Builder b = new AlertDialog.Builder(this)
+                .setTitle(R.string.err_title)
+                .setMessage(msg)
+                .setPositiveButton(R.string.ok, null);
+        if (e.kind == PhotoReader.ReadException.BAD_KEY) {
+            b.setNeutralButton(R.string.change_key, (d, w) -> askForKey(null));
+        }
+        b.show();
+    }
+
+    private void showMessage(int msg) {
+        new AlertDialog.Builder(this).setMessage(msg).setPositiveButton(R.string.ok, null).show();
+    }
+
+    /** Okno do wklejenia klucza Claude API. Klucz zostaje tylko w tym telefonie. */
+    private void askForKey(Runnable then) {
+        EditText field = new EditText(this);
+        field.setHint("sk-ant-…");
+        field.setSingleLine(true);
+        field.setText(ListStore.apiKey(this));
+        field.setTextColor(getColor(R.color.fg));
+        LinearLayout wrap = new LinearLayout(this);
+        wrap.setPadding(dp(20), dp(8), dp(20), 0);
+        wrap.addView(field, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+        AlertDialog.Builder b = new AlertDialog.Builder(this)
+                .setTitle(R.string.key_title)
+                .setMessage(R.string.key_message)
+                .setView(wrap)
+                .setPositiveButton(R.string.save, (d, w) -> {
+                    String k = field.getText().toString().trim();
+                    ListStore.setApiKey(this, k);
+                    if (!k.isEmpty() && then != null) then.run();
+                })
+                .setNegativeButton(R.string.cancel, null);
+        if (!ListStore.apiKey(this).isEmpty()) {
+            b.setNeutralButton(R.string.remove_key, (d, w) -> ListStore.setApiKey(this, ""));
+        }
+        b.show();
     }
 
     private void hideKeyboard() {
