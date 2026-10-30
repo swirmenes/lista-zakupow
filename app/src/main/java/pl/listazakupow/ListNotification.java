@@ -8,6 +8,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.drawable.Icon;
 import android.os.Build;
 
 import java.util.ArrayList;
@@ -23,6 +24,10 @@ public final class ListNotification {
     public static void update(Context c) {
         NotificationManager nm = c.getSystemService(NotificationManager.class);
         if (nm == null) return;
+        if (!ListStore.showOnLock(c)) {
+            nm.cancel(ID);
+            return;
+        }
         ensureChannel(c, nm);
 
         List<String> todo = new ArrayList<>();
@@ -50,6 +55,9 @@ public final class ListNotification {
                 .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent pi = PendingIntent.getActivity(c, 0, open,
                 PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent hide = PendingIntent.getBroadcast(c, 1,
+                new Intent(c, HideReceiver.class),
+                PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
 
         Notification n = new Notification.Builder(c, CHANNEL)
                 .setSmallIcon(R.drawable.ic_notification)
@@ -62,6 +70,9 @@ public final class ListNotification {
                 .setVisibility(Notification.VISIBILITY_PUBLIC)
                 .setCategory(Notification.CATEGORY_REMINDER)
                 .setContentIntent(pi)
+                .addAction(new Notification.Action.Builder(
+                        Icon.createWithResource(c, R.drawable.ic_notification),
+                        c.getString(R.string.action_hide), hide).build())
                 .build();
         nm.notify(ID, n);
     }

@@ -25,7 +25,18 @@ public final class ListStore {
         }
     }
 
+    private static final String KEY_LOCK = "show_on_lock";
+
     private ListStore() {}
+
+    /** Czy pokazywać listę na ekranie blokady (domyślnie tak). */
+    public static boolean showOnLock(Context c) {
+        return c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_LOCK, true);
+    }
+
+    public static void setShowOnLock(Context c, boolean on) {
+        c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_LOCK, on).apply();
+    }
 
     public static ArrayList<Item> load(Context c) {
         ArrayList<Item> out = new ArrayList<>();

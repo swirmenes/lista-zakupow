@@ -11,5 +11,7 @@
     <string name="delete_item">Usuń %1$s</string>
     <string name="notif_title">Do kupienia: %1$d</string>
     <string name="channel_name">Lista zakupów</string>
+    <string name="action_hide">Ukryj z ekranu blokady</string>
+    <string name="lock_switch">Lista na ekranie blokady</string>
     <string name="channel_desc">Lista widoczna na ekranie blokady</string>
 </resources>

@@ -15,6 +15,7 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ public class MainActivity extends Activity {
     private TextView emptyView;
     private TextView countView;
     private EditText input;
+    private Switch lockSwitch;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,6 +44,11 @@ public class MainActivity extends Activity {
         input = findViewById(R.id.input);
         Button add = findViewById(R.id.add);
         Button clearDone = findViewById(R.id.clear_done);
+        lockSwitch = findViewById(R.id.lock_switch);
+        lockSwitch.setOnClickListener(v -> {
+            ListStore.setShowOnLock(this, lockSwitch.isChecked());
+            ListNotification.update(this);
+        });
 
         add.setOnClickListener(v -> addFromInput());
         input.setOnEditorActionListener((v, actionId, event) -> {
@@ -69,8 +76,9 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         items = ListStore.load(this);
+        lockSwitch.setChecked(ListStore.showOnLock(this));
         render();
-        // Przywraca powiadomienie, jeśli zostało zamknięte.
+        // Przywraca powiadomienie (jeśli funkcja jest włączona), gdy zostało zamknięte.
         ListNotification.update(this);
     }
 

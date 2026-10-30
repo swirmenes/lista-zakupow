@@ -44,10 +44,20 @@
                     android:textSize="15sp" />
             </LinearLayout>
 
+            <Switch
+                android:id="@+id/lock_switch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:minHeight="48dp"
+                android:text="@string/lock_switch"
+                android:textColor="@color/fg"
+                android:textSize="16sp" />
+
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
+                android:layout_marginTop="12dp"
                 android:layout_marginBottom="6dp"
                 android:letterSpacing="0.08"
                 android:text="@string/label_todo"

@@ -22,6 +22,10 @@
         </activity>
 
         <receiver
+            android:name=".HideReceiver"
+            android:exported="false" />
+
+        <receiver
             android:name=".BootReceiver"
             android:exported="true">
             <intent-filter>
