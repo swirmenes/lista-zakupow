@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Lista zakupów</string>
+    <string name="label_todo">DO KUPIENIA</string>
+    <string name="label_done">W KOSZYKU</string>
+    <string name="clear_done">Usuń kupione</string>
+    <string name="empty">Lista jest pusta. Wpisz produkt na dole. Kilka naraz oddziel przecinkami: mleko, chleb, jajka.</string>
+    <string name="hint">Dodaj produkt…</string>
+    <string name="add">Dodaj</string>
+    <string name="count">%1$d z %2$d kupione</string>
+    <string name="delete_item">Usuń %1$s</string>
+    <string name="notif_title">Do kupienia: %1$d</string>
+    <string name="channel_name">Lista zakupów</string>
+    <string name="channel_desc">Lista widoczna na ekranie blokady</string>
+</resources>

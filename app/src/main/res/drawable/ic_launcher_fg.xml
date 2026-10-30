@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Pierwszy plan ikony aplikacji: kartka z listą i ptaszkiem, w bezpiecznej strefie 66dp. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M38,32h32a4,4 0,0 1,4 4v40a4,4 0,0 1,-4 4h-32a4,4 0,0 1,-4 -4v-40a4,4 0,0 1,4 -4z" />
+    <path
+        android:fillColor="#2F6B45"
+        android:pathData="M41,46.5L43.5,44l3,3l6,-6L55,43.5l-8.5,8.5z M58,44h10v3.5h-10z M42,57h6v6h-6z M53,58.5h15v3.5h-15z M42,68h6v6h-6z M53,69.5h15v3.5h-15z" />
+</vector>

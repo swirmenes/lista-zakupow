@@ -1,0 +1,40 @@
+plugins {
+    id 'com.android.application'
+}
+
+def buildNumber = (System.getenv("GITHUB_RUN_NUMBER") ?: "1") as Integer
+
+android {
+    namespace 'pl.listazakupow'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'pl.listazakupow'
+        minSdk 26
+        targetSdk 34
+        versionCode buildNumber
+        versionName "1.${buildNumber}"
+    }
+
+    // Stały klucz podpisu, żeby kolejne wersje instalowały się jako aktualizacja
+    // (bez odinstalowywania i bez utraty listy).
+    signingConfigs {
+        shared {
+            storeFile file('lista.keystore')
+            storePassword 'listazakupow'
+            keyAlias 'lista'
+            keyPassword 'listazakupow'
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.shared
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
