@@ -9,6 +9,8 @@ import android.os.Bundle;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
+import android.view.inputmethod.InputMethodManager;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
@@ -44,6 +46,11 @@ public class MainActivity extends Activity {
         input = findViewById(R.id.input);
         Button add = findViewById(R.id.add);
         Button clearDone = findViewById(R.id.clear_done);
+        // Dotknięcie listy chowa klawiaturę.
+        findViewById(R.id.scroll).setOnTouchListener((v, ev) -> {
+            if (ev.getAction() == MotionEvent.ACTION_DOWN && input.hasFocus()) hideKeyboard();
+            return false;
+        });
         lockSwitch = findViewById(R.id.lock_switch);
         lockSwitch.setOnClickListener(v -> {
             ListStore.setShowOnLock(this, lockSwitch.isChecked());
@@ -101,7 +108,16 @@ public class MainActivity extends Activity {
         if (added) {
             input.setText("");
             changed();
+        } else {
+            // Puste pole + "Dodaj"/Enter = koniec wpisywania, chowamy klawiaturę.
+            hideKeyboard();
         }
+    }
+
+    private void hideKeyboard() {
+        InputMethodManager imm = getSystemService(InputMethodManager.class);
+        if (imm != null) imm.hideSoftInputFromWindow(input.getWindowToken(), 0);
+        input.clearFocus();
     }
 
     private void changed() {
